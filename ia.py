@@ -11,7 +11,7 @@ def response(user_input):
     if user_input in responses:
         return responses[user_input]
     else:
-        return "Je ne comprends pas votre demande."
+        return "Désolé, je ne comprends pas votre demande."
 
 
 # Création de l'app
