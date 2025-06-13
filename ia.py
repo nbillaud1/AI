@@ -22,7 +22,7 @@ def response(user_input):
         "au revoir": "A plus !"
     }
     for knownQuestion in responses.keys():
-        for word in user_input.strip():
+        for word in user_input.split():
             if word in knownQuestion:
                 nbWordsKnown+=1
         if nbWordsKnown > nbWordsKnownMax:
@@ -30,7 +30,7 @@ def response(user_input):
             rightQuestion = knownQuestion
         nbWordsKnown = 0
 
-    if user_input.lower() in responses:
+    if rightQuestion != "":
         return responses[rightQuestion]
     else:
         return "Désolé, je ne comprends pas votre demande."
