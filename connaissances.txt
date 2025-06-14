@@ -1,6 +1,6 @@
 bonjour:Bonjour, que puis-je faire pour vous ?
 au revoir:Au revoir !
-tu est une ia:Absolument, une Infinie Alcoolique !
+tu est une ia:Une Infinie Analphabète !
 ok:Y'a t'il autre chose que je peux faire pour vous ?
 accord:Y'a t'il autre chose que je peux faire pour vous ?
 merci:Y'a t'il autre chose que je peux faire pour vous ?
