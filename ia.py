@@ -4,7 +4,9 @@ import re
 useless_words = []
 responses = {}
 
-#TODO ajouter le : Ai-je bien répondu ? et l'update des connaissances associé.
+#TODO ajouter l'update des connaissances associée au à la question + régler le problème de la saisie vide pour rien \_(._.)_/.
+#                                                                                                                       |
+#                                                                                                                      / \
 
 # Connaissances de base
 # bonjour:Bonjour, que puis-je faire pour vous ?
