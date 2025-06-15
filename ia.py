@@ -1,176 +1,164 @@
 import customtkinter as ctk
 import re
 
-useless_words = []
-responses = {}
+#TODO reste à gérer les synonymes _('<')_/.
+#                                /   |
+#                                   / \
 
-#TODO ajouter l'update des connaissances associée au à la question + régler le problème de la saisie vide pour rien \_(._.)_/.
-#                                                                                                                       |
-#                                                                                                                      / \
-
-# Connaissances de base
+# Connaissances de base :
 # bonjour:Bonjour, que puis-je faire pour vous ?
 # au revoir:Au revoir !
 # tu est une ia:une Infinie Alcoolique !
 # ok:Y'a t'il autre chose que je peux faire pour vous ?
 # accord:Y'a t'il autre chose que je peux faire pour vous ?
 # merci:Y'a t'il autre chose que je peux faire pour vous ?
+#
+# Inutiles de base :
+# le la les je tu il elle nous vous ils elles du de des au en d s c l ? !
 
-def updateKnowledge(addInI=None, addInC=None):
-    """addInI doit être une chaîne de caractère et addInC une liste de deux chaînes: [question,réponse]"""
+class AppIA(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("500x600")
+        self.overrideredirect(True)
+        self.title("IA (Infiniment Analphabète)")
+        self.useless_words = []
+        self.responses = {}
+        self.updateKnowledge()
+        self.last_question = ""
+        self.awaiting = None
 
-    # Chargement des variables (lecture du fichier)
-    with open("inutiles.txt", "r") as i:
-            useless_words = i.read().split()
+        # Associer la touchee entrée à l'envoie du message
+        self.bind("<Return>", self.send)
 
-    with open("connaissances.txt", "r") as c:
-        for line in c:
-            responses[line.split(":")[0]] = line.split(":")[1]
+        # Création de l'en-tête
+        self.header = ctk.CTkLabel(self, text="IA (Infiniment Analphabète) ! pour quitter entrez /q", font=("Calibri", 20, "bold"))
+        self.header.pack(pady=10)
 
-    # Ajout de connaissances dans les variables
-    if not addInI == None:
-        useless_words.append(addInI)
-    if not addInC == None:
-        responses[addInC[0]] = addInC[1]
+        # Création de l'affichage des messages
+        self.chat_history = ctk.CTkTextbox(self, width=480, height=450, state="disabled")
+        self.chat_history.pack(pady=10, padx=10, fill="both", expand=True)
 
-    # Ecriture dans les fichiers
-    with open("inutiles.txt", "w") as i:
-        knowledge = ""
-        for word in useless_words:
-            knowledge += ' ' + word
-        i.write(knowledge)
+        # Ajout des couleurs pour le bot et le user
+        self.chat_history.tag_config("user", foreground="blue")
+        self.chat_history.tag_config("bot", foreground="green")
 
-    with open("connaissances.txt", "w") as c:
-        knowledge = ""
-        for question in responses.keys():
-            if not responses[question].endswith("\n"):
-                knowledge += question + ":" + responses[question] + "\n"
+        # Création du champs de saisie
+        self.user_input = ctk.CTkFrame(self)
+        self.user_input.pack(pady=10, padx=10, fill="x")
+
+        self.entry = ctk.CTkEntry(self.user_input, placeholder_text="Entrez votre texte ici !", width=400)
+        self.entry.pack(padx=5, side="left")
+
+        self.sendButton = ctk.CTkButton(self.user_input, text="Send", cursor="hand2", command=self.send)
+        self.sendButton.pack(side="right")
+
+
+    def updateKnowledge(self, addInI=None, addInC=None):
+        """addInI doit être une chaîne de caractère et addInC une liste de deux chaînes: [question,réponse]"""
+
+        # Chargement des variables (lecture du fichier)
+        with open("inutiles.txt", "r") as i:
+                useless_words = i.read().split()
+
+        with open("connaissances.txt", "r") as c:
+            for line in c:
+                self.responses[line.split(":")[0]] = line.split(":")[1]
+
+        # Ajout de connaissances dans les variables
+        if addInI != None:
+            useless_words.append(addInI)
+        if addInC != None:
+            self.responses[addInC[0]] = addInC[1]
+
+        # Ecriture dans les fichiers
+        with open("inutiles.txt", "w") as i:
+            knowledge = ""
+            for word in useless_words:
+                knowledge += ' ' + word
+            i.write(knowledge)
+
+        with open("connaissances.txt", "w") as c:
+            knowledge = ""
+            for question in self.responses.keys():
+                if not self.responses[question].endswith("\n"):
+                    knowledge += question + ":" + self.responses[question] + "\n"
+                else:
+                    knowledge += question + ":" + self.responses[question]
+            c.write(knowledge)
+
+    def send(self, event=None):
+        user_input = self.entry.get().strip()
+        if not "/q" in user_input:
+            if user_input == "":
+                return
+
+            self.show_user(user_input)
+
+            if self.awaiting == "confirm":
+                if user_input.lower() == "non":
+                    self.show_bot("Dîtes moi donc ce que je dois répondre\n")
+                    self.awaiting = "learn"
+                else:
+                    self.show_bot("D'accord !\n")
+                    self.awaiting = None
+                return
+
+            elif self.awaiting == "learn":
+                self.show_bot("Je prends ça en compte !\n")
+                self.updateKnowledge(addInC=[self.last_question, user_input])
+                self.awaiting = None
+                return
+
+            response = self.response(user_input.lower())
+            self.last_question = user_input.lower()
+            self.show_bot(response)
+
+            if response == "Désolé, je ne comprends pas votre demande.\n":
+                self.show_bot("Voulez-vous m'apprendre à répondre à ce type de question ? (oui / non)\n")
+                self.awaiting = "confirm"
             else:
-                knowledge += question + ":" + responses[question]
-        c.write(knowledge)
-
-# Envoie de la quesion + affichage réponse
-def send(event=None):
-    question = entry.get()
-    bot_resp = response(question.lower())
-    if question.strip() != "":
-        show_user(question)
-        show_bot(bot_resp)
-        if bot_resp != "Désolé, je ne comprends pas votre demande.\n":
-            show_bot("Ai-je bien répondu ? (oui / non)\n")
-            entry.get()
-            app.bind("<Return>", confirmation_correction(question))
-            #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=confirmation_correction(question))
+                self.show_bot("Ai-je bien répondu ? (oui / non)\n")
+                self.awaiting = "confirm"
         else:
-            show_bot("Voulez-vous m'apprendre à répondre à ce type de question ? (oui / non)\n")
-            app.bind("<Return>", confirmation_learning(question))
-            #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=confirmation_learning(question))
+            self.updateKnowledge()
+            self.destroy()
 
-# Réponse
-def response(user_input):
-    if "/q" not in user_input: 
-        nbWordsKnown = 0
-        nbWordsKnownMax = 0
-        rightQuestion = ""
-        for knownQuestion in responses.keys():
-            for word in re.split(r"[ \'-]", user_input): # pour split selon plusieurs critères
-                if word.strip(".?!,") in knownQuestion and word.strip(".?!,") not in useless_words:
-                    nbWordsKnown+=1
-            if nbWordsKnown > nbWordsKnownMax:
-                nbWordsKnownMax = nbWordsKnown
-                rightQuestion = knownQuestion
+    def response(self, user_input):
+        if "/q" not in user_input: 
             nbWordsKnown = 0
+            nbWordsKnownMax = 0
+            rightQuestion = ""
+            for knownQuestion in self.responses.keys():
+                for word in re.split(r"[ \'-]", user_input): # pour split selon plusieurs critères
+                    if word.strip(".?!,") in knownQuestion and word.strip(".?!,") not in self.useless_words:
+                        nbWordsKnown+=1
+                if nbWordsKnown > nbWordsKnownMax:
+                    nbWordsKnownMax = nbWordsKnown
+                    rightQuestion = knownQuestion
+                nbWordsKnown = 0
 
-        if rightQuestion != "":
-            return responses[rightQuestion]
+            if rightQuestion != "":
+                return self.responses[rightQuestion]
+            else:
+                return "Désolé, je ne comprends pas votre demande.\n"
         else:
-            return "Désolé, je ne comprends pas votre demande.\n"
-    else:
-        updateKnowledge()
-        app.destroy()
+            self.updateKnowledge()
+            self.destroy()
 
-# Si on veut corriger l'IA
-def confirmation_correction(question, event=None):
-    user_conf = entry.get()
-    if "/q" not in user_conf:
-        show_user(user_conf)
-        if user_conf.lower() == "non":
-            show_bot("Dîtes moi donc ce que je dois répondre\n")
-            #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=learn(question, user_conf.lower()))
-            app.bind("<Return>", learn(question, user_conf.lower()))
-        else:
-            show_bot("D'accord !\n")
-            #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=send)
-            app.bind("<Return>", send)
-    else:
-        updateKnowledge()
-        app.destroy()
+    def show_user(self, text):
+        self.chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))
+        self.chat_history.insert("end", f"Vous: {text}\n", "user")
+        self.entry.delete(0, ctk.END)
+        self.chat_history.configure(state="disabled")
 
-# Si on veut apprendre à l'IA
-def confirmation_learning(question, event=None):
-    user_conf = entry.get()
-    if "/q" not in user_conf:
-        show_user(user_conf)
-        if user_conf.lower() == "oui":
-            show_bot("Dîtes moi donc ce que je dois répondre\n")
-            #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=learn(question, user_conf.lower()))
-            app.bind("<Return>", learn(question, user_conf.lower()))
-        else:
-            show_bot("D'accord !\n")
-            #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=send)
-            app.bind("<Return>", send)
-    else:
-        updateKnowledge()
-        app.destroy()
+    def show_bot(self, text):
+        if not text.endswith("\n"):
+            text += "\n"
+        self.chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))
+        self.chat_history.insert("end", f"IA: {text}", "bot")
+        self.chat_history.configure(state="disabled")
 
-def learn(answer, question, event=None):
-    print("coucou")
-    updateKnowledge(addInC=[question, answer])
-    show_bot("Les informations sont bien enregistrées !")
-    #sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=send)
-    app.bind("<Return>", send)
-
-
-def show_user(text):
-    chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))
-    chat_history.insert("end", f"Vous: {text}\n", "user")
-    entry.delete(0, ctk.END)
-    chat_history.configure(state="disabled")
-
-def show_bot(text):
-    chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))
-    chat_history.insert("end", f"IA: {text}", "bot")
-    chat_history.configure(state="disabled")
-
-updateKnowledge()
-# Création de l'app
-app = ctk.CTk()
-app.geometry("500x600")
-app.overrideredirect(True)
-app.title("IA (Infiniment Analphabète)")
-
-# Création de l'en-tête
-header = ctk.CTkLabel(app, text="IA (Infiniment Analphabète) ! pour quitter entrez /q", font=("Calibri", 20, "bold"))
-header.pack(pady=10)
-
-# Création de l'affichage des messages
-chat_history = ctk.CTkTextbox(app, width=480, height=450, state="disabled")
-chat_history.pack(pady=10, padx=10, fill="both", expand=True)
-# Ajout des couleurs pour le bot et le user
-chat_history.tag_config("user", foreground="blue")
-chat_history.tag_config("bot", foreground="green")
-
-# Création du champs de saisie
-user_input = ctk.CTkFrame(app)
-user_input.pack(pady=10, padx=10, fill="x")
-
-entry = ctk.CTkEntry(user_input, placeholder_text="Entrez votre texte ici !", width=400)
-entry.pack(padx=5, side="left")
-
-sendButton = ctk.CTkButton(user_input, text="Send", cursor="hand2", command=send)
-sendButton.pack(side="right")
-
-# Associer la touchee entrée à l'envoie du message
-app.bind("<Return>", send)
-
-app.mainloop()
+# Programme principal
+self = AppIA()
+self.mainloop()
