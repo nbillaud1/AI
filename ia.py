@@ -84,9 +84,9 @@ class AppIA(ctk.CTk):
             knowledge = ""
             for question in self.responses.keys():
                 if not self.responses[question].endswith("\n"):
-                    knowledge += question + ":" + self.responses[question] + "\n"
+                    knowledge += question + ":" + self.responses[question].replace(":", "->") + "\n"
                 else:
-                    knowledge += question + ":" + self.responses[question]
+                    knowledge += question + ":" + self.responses[question].replace(":", "->")
             c.write(knowledge)
 
     def send(self, event=None):
@@ -101,6 +101,16 @@ class AppIA(ctk.CTk):
                 if user_input.lower() == "non":
                     self.show_bot("Dîtes moi donc ce que je dois répondre\n")
                     self.awaiting = "learn"
+                elif user_input.lower() == "internet":
+                    self.internet_response = self.learn_from_internet(self.last_question)
+                    if self.internet_response not in ["Une erreur est survenue pendant la recherche.\n", "Je n'ai trouvé aucune page correspondante.\n"] and "Le sujet est trop vague. Vous pouvez préciser ?\n" not in self.internet_response:
+                        self.show_bot(self.internet_response)
+                        self.show_bot("Ai je bien répondu ? (oui / non)")
+                        self.awaiting = "internet"
+                    else:
+                        self.show_bot(self.internet_response)
+                        self.awaiting = None
+                        return
                 else:
                     self.show_bot("D'accord !\n")
                     self.awaiting = None
@@ -111,13 +121,16 @@ class AppIA(ctk.CTk):
                     self.show_bot("Dîtes moi donc ce que je dois répondre\n")
                     self.awaiting = "learn"
                 elif user_input.lower() == "internet":
-                    self.internet_response = self.learn_from_internet(user_input.lower())
-                    if self.internet_response != "Je n'ai rien trouvé d'intéressant...":
+                    self.internet_response = self.learn_from_internet(self.last_question)
+                    if self.internet_response not in ["Une erreur est survenue pendant la recherche.\n", "Je n'ai trouvé aucune page correspondante.\n"] and "Le sujet est trop vague. Vous pouvez préciser ?\n" not in self.internet_response:
                         self.show_bot(self.internet_response)
                         self.show_bot("Ai je bien répondu ? (oui / non)")
                         self.awaiting = "internet"
                     else:
                         self.show_bot(self.internet_response)
+                        self.awaiting = None
+                        return
+
                 else:
                     self.show_bot("D'accord !\n")
                     self.awaiting = None
@@ -147,7 +160,7 @@ class AppIA(ctk.CTk):
                 self.show_bot("Voulez-vous m'apprendre à répondre à ce type de question ? (oui / non / internet)\n")
                 self.awaiting = "unknown"
             else:
-                self.show_bot("Ai-je bien répondu ? (oui / non)\n")
+                self.show_bot("Ai-je bien répondu ? (oui / non / internet)\n")
                 self.awaiting = "confirm"
         else:
             self.updateKnowledge()
@@ -176,14 +189,20 @@ class AppIA(ctk.CTk):
             self.destroy()
 
     def learn_from_internet(self, question):
+        wikipedia.set_lang("fr")
+        self.show_bot(f"Recherche sur Wikipédia pour : {question}...\n")
+        resp = ""
         try:
-            """summary = wikipedia.summary(question, sentences=2)
-            self.responses[question] = summary
-            self.updateKnowledge(addInC=[question, summary])
-            self.show_bot(f"J'ai appris : {summary}\n")"""
-            return wikipedia.summary(question, sentences=2)
-        except:
-            return "Je n'ai rien trouvé d'intéressant..."
+            return wikipedia.summary(question, sentences=2, auto_suggest=False)
+        except wikipedia.DisambiguationError as e:
+            options = ", ".join(e.options[:5])  # Affiche quelques suggestions
+            resp += "Le sujet est trop vague. Vous pouvez préciser ?\n"
+            resp += f"Exemples possibles : {options}\n"
+        except wikipedia.PageError:
+            resp += "Je n'ai trouvé aucune page correspondante.\n"
+        except Exception as e:
+            resp += "Une erreur est survenue pendant la recherche.\n"
+        return resp
 
     def show_user(self, text):
         self.chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))

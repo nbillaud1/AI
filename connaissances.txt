@@ -4,3 +4,5 @@ tu est une ia:Une Infinie AnalphabÃ¨te !
 ok:Y'a t'il autre chose que je peux faire pour vous ?
 accord:Y'a t'il autre chose que je peux faire pour vous ?
 merci:Y'a t'il autre chose que je peux faire pour vous ?
+tennis:Le tennis est un sport de raquette qui oppose soit deux joueurs (on parle alors de jeu en simple) soit quatre joueurs qui forment deux ï¿½quipes de deux (un double). Les joueurs utilisent une raquette cordï¿½e verticalement et horizontalement (en tamis) ï¿½ une tension variant avec la puissance ou l'effet.
+portugal:Le Portugal, en forme longue la République portugaise, en portugais -> República Portuguesa, est un pays d'Europe du Sud, membre de l'Union européenne, situé dans l'Ouest de la péninsule Ibérique. Délimité au nord et à l'est par l'Espagne puis au sud et à l'ouest par l'océan Atlantique, ce pays est le plus occidental de l'Europe continentale.
