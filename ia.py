@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import re
+import wikipedia
 
 #TODO reste à gérer les synonymes _('<')_/.
 #                                /   |
@@ -19,14 +20,15 @@ import re
 class AppIA(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("500x600")
-        self.overrideredirect(True)
+        self.geometry("700x700")
+        #self.overrideredirect(True)
         self.title("IA (Infiniment Analphabète)")
         self.useless_words = []
         self.responses = {}
         self.updateKnowledge()
         self.last_question = ""
         self.awaiting = None
+        self.internet_response = ""
 
         # Associer la touchee entrée à l'envoie du message
         self.bind("<Return>", self.send)
@@ -47,7 +49,7 @@ class AppIA(ctk.CTk):
         self.user_input = ctk.CTkFrame(self)
         self.user_input.pack(pady=10, padx=10, fill="x")
 
-        self.entry = ctk.CTkEntry(self.user_input, placeholder_text="Entrez votre texte ici !", width=400)
+        self.entry = ctk.CTkEntry(self.user_input, placeholder_text="Entrez votre texte ici !", width=550)
         self.entry.pack(padx=5, side="left")
 
         self.sendButton = ctk.CTkButton(self.user_input, text="Send", cursor="hand2", command=self.send)
@@ -103,6 +105,33 @@ class AppIA(ctk.CTk):
                     self.show_bot("D'accord !\n")
                     self.awaiting = None
                 return
+            
+            elif self.awaiting == "unknown":
+                if user_input.lower() == "oui":
+                    self.show_bot("Dîtes moi donc ce que je dois répondre\n")
+                    self.awaiting = "learn"
+                elif user_input.lower() == "internet":
+                    self.internet_response = self.learn_from_internet(user_input.lower())
+                    if self.internet_response != "Je n'ai rien trouvé d'intéressant...":
+                        self.show_bot(self.internet_response)
+                        self.show_bot("Ai je bien répondu ? (oui / non)")
+                        self.awaiting = "internet"
+                    else:
+                        self.show_bot(self.internet_response)
+                else:
+                    self.show_bot("D'accord !\n")
+                    self.awaiting = None
+                return
+            
+            elif self.awaiting == "internet":
+                if user_input.lower() == "oui":
+                    self.show_bot("D'accord ! J'enregistre donc la réponse !\n")
+                    self.updateKnowledge(addInC=[self.last_question, self.internet_response])
+                    self.awaiting = None
+                else:
+                    self.show_bot("Dîtes moi donc ce que je dois répondre\n")
+                    self.awaiting = "learn"
+                return
 
             elif self.awaiting == "learn":
                 self.show_bot("Je prends ça en compte !\n")
@@ -115,8 +144,8 @@ class AppIA(ctk.CTk):
             self.show_bot(response)
 
             if response == "Désolé, je ne comprends pas votre demande.\n":
-                self.show_bot("Voulez-vous m'apprendre à répondre à ce type de question ? (oui / non)\n")
-                self.awaiting = "confirm"
+                self.show_bot("Voulez-vous m'apprendre à répondre à ce type de question ? (oui / non / internet)\n")
+                self.awaiting = "unknown"
             else:
                 self.show_bot("Ai-je bien répondu ? (oui / non)\n")
                 self.awaiting = "confirm"
@@ -145,6 +174,16 @@ class AppIA(ctk.CTk):
         else:
             self.updateKnowledge()
             self.destroy()
+
+    def learn_from_internet(self, question):
+        try:
+            """summary = wikipedia.summary(question, sentences=2)
+            self.responses[question] = summary
+            self.updateKnowledge(addInC=[question, summary])
+            self.show_bot(f"J'ai appris : {summary}\n")"""
+            return wikipedia.summary(question, sentences=2)
+        except:
+            return "Je n'ai rien trouvé d'intéressant..."
 
     def show_user(self, text):
         self.chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))
