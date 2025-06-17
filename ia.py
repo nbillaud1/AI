@@ -61,7 +61,7 @@ class AppIA(ctk.CTk):
 
         # Chargement des variables (lecture du fichier)
         with open("inutiles.txt", "r") as i:
-                useless_words = i.read().split()
+                self.useless_words = i.read().split(' ')
 
         with open("connaissances.txt", "r") as c:
             for line in c:
@@ -69,14 +69,14 @@ class AppIA(ctk.CTk):
 
         # Ajout de connaissances dans les variables
         if addInI != None:
-            useless_words.append(addInI)
+            self.useless_words.append(addInI)
         if addInC != None:
             self.responses[addInC[0]] = addInC[1]
 
         # Ecriture dans les fichiers
         with open("inutiles.txt", "w") as i:
             knowledge = ""
-            for word in useless_words:
+            for word in self.useless_words:
                 knowledge += ' ' + word
             i.write(knowledge)
 
