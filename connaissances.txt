@@ -14,5 +14,7 @@ tu es un ia:Oui, une Infinie Analphabï¿½te !
 ï¿½a va ?:Toujours au top et toi ?
 qui a crï¿½ï¿½ le volt ?:Alessandro Volta
 volt:Le volt (symbole -> V) correspond ï¿½ la diffï¿½rence de potentiel ï¿½lectrique entre deux points d'un circuit composï¿½ d'une rï¿½sistance d'un ohm, lorsque ce mï¿½me circuit est parcouru par un courant constant de 1 ampï¿½re.
-quelle est la date du sacre de napoléon ?:1818
+quelle est la date du sacre de napolï¿½on ?:1818
 quelle est la date de verdun:1916
+usa:Les États-Unis (prononcé -> [etazyni]), en forme longue les États-Unis d'Amérique,, également appelés de manière informelle les US, les USA ou moins exactement l'Amérique (en anglais -> United States, United States of America, US, USA, America), ou familièrement les States, sont un État transcontinental dont une large majorité du territoire se situe en Amérique du Nord. Les États-Unis ont la structure politique d'une république et d'un État fédéral à régime présidentiel, composé de cinquante États.
+quelle est la date de création des usa:4 juillet 1776
