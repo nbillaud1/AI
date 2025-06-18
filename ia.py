@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import re
 import wikipedia
+from transformers import pipeline
 
 #TODO reste à gérer les synonymes _('<')_/.
 #                                /   |
@@ -29,6 +30,7 @@ class AppIA(ctk.CTk):
         self.last_question = ""
         self.awaiting = None
         self.internet_response = ""
+        self.question_mark = False
 
         # Associer la touchee entrée à l'envoie du message
         self.bind("<Return>", self.send)
@@ -173,7 +175,9 @@ class AppIA(ctk.CTk):
             rightQuestion = ""
             for knownQuestion in self.responses.keys():
                 for word in re.split(r"[ \'-]", user_input): # pour split selon plusieurs critères
-                    if word.strip(".?!,") in knownQuestion and word.strip(".?!,") not in self.useless_words:
+                    if user_input == knownQuestion: # si la question exacte est déjà connue
+                        return self.responses[knownQuestion]
+                    elif word.strip(".?!,") in knownQuestion: # si on connait à peu près la question # jsp s'il faut mettre "and word.strip(".?!,") not in self.useless_words"
                         nbWordsKnown+=1
                 if nbWordsKnown > nbWordsKnownMax:
                     nbWordsKnownMax = nbWordsKnown
@@ -193,7 +197,13 @@ class AppIA(ctk.CTk):
         self.show_bot(f"Recherche sur Wikipédia pour : {question}...\n")
         resp = ""
         try:
-            return wikipedia.summary(question, sentences=2, auto_suggest=False)
+            for word in question.lower().split():
+                if word in ["quel", "quelle", "qui", "quels", "quelles", "où", "quand", "pourquoi", "comment", "?"]:
+                    self.question_mark = True
+            if not self.question_mark:
+                return wikipedia.summary(question, sentences=2, auto_suggest=False)
+            else:
+                return self.precise_answer(question)
         except wikipedia.DisambiguationError as e:
             options = ", ".join(e.options[:5])  # Affiche quelques suggestions
             resp += "Le sujet est trop vague. Vous pouvez préciser ?\n"
@@ -201,8 +211,21 @@ class AppIA(ctk.CTk):
         except wikipedia.PageError:
             resp += "Je n'ai trouvé aucune page correspondante.\n"
         except Exception as e:
-            resp += "Une erreur est survenue pendant la recherche.\n"
+            resp += f"Une erreur est survenue pendant la recherche : {str(e)}\n"
         return resp
+    
+    def precise_answer(self, question):
+        qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2")
+        for word in question.split():
+            if word not in self.useless_words:
+                key_word = word
+        try:
+            context = wikipedia.summary(key_word, auto_suggest=False)
+        except Exception as e:
+            return f"Erreur lors du résumé pour le mot-clé '{key_word}' : {e}"
+        
+        result = qa_pipeline(question=question, context=context)
+        return result["answer"]
 
     def show_user(self, text):
         self.chat_history.configure(state="normal", font=(("Calibri", 18, "normal")))
